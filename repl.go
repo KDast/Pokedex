@@ -5,6 +5,9 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
+
+	"github.com/KDast/Pokedex/internal/pokecache"
 )
 
 func cleanInput(text string) []string {
@@ -16,11 +19,15 @@ func cleanInput(text string) []string {
 func startRepl() {
 	reader := bufio.NewScanner(os.Stdin)
 	var cfg config
+	internalCache := pokecache.NewCache(10 * time.Second)
 	cfg = config{
 		next:     "https://pokeapi.co/api/v2/location-area/",
 		previous: "",
+		cache:    internalCache,
+		explore:  "",
 	}
 	cfgPtr := &cfg
+
 	for {
 		fmt.Print("Pokedex > ")
 		reader.Scan()
@@ -29,12 +36,14 @@ func startRepl() {
 			continue
 		}
 		commandName := words[0]
+		area := words[1]
 		command, exists := getCommands()[commandName]
 		if exists {
-			err := command.callback(cfgPtr)
+			err := command.callback(cfgPtr, area)
 			if err != nil {
 				fmt.Println(err)
 			}
+
 			continue
 		} else {
 			fmt.Println("Uknown command")
@@ -46,7 +55,7 @@ func startRepl() {
 type cliCommand struct {
 	name        string
 	description string
-	callback    func(*config) error
+	callback    func(*config, string) error
 }
 
 func getCommands() map[string]cliCommand {
@@ -70,6 +79,11 @@ func getCommands() map[string]cliCommand {
 			name:        "previousmap",
 			description: "Displays previous 20 cities around canalave-city",
 			callback:    previousMap,
+		},
+		"explore": {
+			name:        "explore",
+			description: "Displays all pokemons of the region",
+			callback:    explore,
 		},
 	}
 }

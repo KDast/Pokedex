@@ -1,8 +1,14 @@
 package main
 
+import (
+	"github.com/KDast/Pokedex/internal/pokecache"
+)
+
 type config struct {
 	next     string
 	previous string
+	cache    pokecache.Cache
+	explore  string
 }
 
 type locationAreaEndPoint struct {
