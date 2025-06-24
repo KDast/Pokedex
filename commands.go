@@ -31,7 +31,7 @@ func getMap(cfg *config, c string) error {
 	value, ok := cfg.cache.Get(cfg.next)
 	if ok {
 		body = value
-		fmt.Println("getting value from cache")
+
 	} else {
 		res, err := http.Get(cfg.next)
 		if err != nil {
@@ -46,7 +46,7 @@ func getMap(cfg *config, c string) error {
 			log.Fatal(err)
 		}
 		cfg.cache.Add(cfg.next, body)
-		fmt.Println("storing into cache")
+
 	}
 	var locations locationAreaEndPoint
 	err := json.Unmarshal(body, &locations)
@@ -72,7 +72,7 @@ func previousMap(cfg *config, c string) error {
 	value, ok := cfg.cache.Get(cfg.previous)
 	if ok {
 		body = value
-		fmt.Println("getting value from cache")
+
 	} else {
 		res, err := http.Get(cfg.previous)
 		if err != nil {
@@ -88,7 +88,7 @@ func previousMap(cfg *config, c string) error {
 			log.Fatal(err)
 		}
 		cfg.cache.Add(cfg.previous, body)
-		fmt.Println("storing into cache")
+
 	}
 
 	var locations locationAreaEndPoint
@@ -119,7 +119,7 @@ func explore(cfg *config, city string) error {
 	value, ok := cfg.cache.Get(cfg.next + city)
 	if ok {
 		body = value
-		fmt.Println("getting value from cache")
+
 	} else {
 		res, err := http.Get(cfg.next + city)
 		if err != nil {
@@ -135,7 +135,7 @@ func explore(cfg *config, city string) error {
 			log.Fatal(err)
 		}
 		cfg.cache.Add(cfg.next+city, body)
-		fmt.Println("storing into cache")
+
 	}
 
 	var pokemons locationAreaID
@@ -160,7 +160,7 @@ func catch(cfg *config, pokemonName string) error {
 	value, ok := cfg.cache.Get(url)
 	if ok {
 		body = value
-		fmt.Println("getting value from cache")
+
 	} else {
 		res, err := http.Get(url)
 		if err != nil {
@@ -175,14 +175,13 @@ func catch(cfg *config, pokemonName string) error {
 			log.Fatal(err)
 		}
 		cfg.cache.Add(url, body)
-		fmt.Println("storing into cache")
+
 	}
 	var pokemon pokemonJson
 	err := json.Unmarshal(body, &pokemon)
 	if err != nil {
 		log.Fatal(err)
 	}
-
 	odds := pokemon.BaseExperience
 	roll := rand.Intn(odds)
 	if roll > odds/3 {
@@ -191,5 +190,38 @@ func catch(cfg *config, pokemonName string) error {
 	} else {
 		fmt.Printf("%s has evaded you... you suck...\n", pokemon.Name)
 	}
+	return nil
+}
+func inspect(cfg *config, pokemonName string) error {
+	pokemon, ok := cfg.pokedex[pokemonName]
+	if ok {
+		fmt.Printf("Name: %v\n", pokemon.Name)
+		fmt.Printf("Height: %v\n", pokemon.Height)
+		fmt.Printf("Weight: %v\n", pokemon.Weight)
+		fmt.Println("Stats:")
+		for _, s := range pokemon.Stats {
+			stats := s.Stat.Name
+			value := s.BaseStat
+			fmt.Printf("-%v: %v\n", stats, value)
+		}
+		fmt.Println("Types:")
+		for _, t := range pokemon.Types {
+			fmt.Printf("-%v", t.Type.Name)
+
+		}
+		fmt.Printf("Types: %v\n", pokemon.Name)
+	} else {
+		fmt.Println("You haven't caught this pokemon yet")
+	}
+
+	return nil
+}
+func pokedex(cfg *config, pokemonName string) error {
+	fmt.Println("Your Pokedex:")
+	for poke := range cfg.pokedex {
+		pokemon := cfg.pokedex[poke]
+		fmt.Printf("- %v\n", pokemon.Name)
+	}
+
 	return nil
 }
