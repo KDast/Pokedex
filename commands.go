@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"math/rand"
 	"net/http"
 	"os"
 )
@@ -110,7 +111,10 @@ func previousMap(cfg *config, c string) error {
 	return nil
 }
 func explore(cfg *config, city string) error {
-
+	if city == "" {
+		fmt.Println("no city input")
+	}
+	fmt.Println(cfg.next + city)
 	var body []byte
 	value, ok := cfg.cache.Get(cfg.next + city)
 	if ok {
@@ -122,7 +126,7 @@ func explore(cfg *config, city string) error {
 			log.Fatal(err)
 			fmt.Println("invalid area")
 		}
-		body, err := io.ReadAll(res.Body)
+		body, err = io.ReadAll(res.Body)
 		res.Body.Close()
 		if res.StatusCode > 299 {
 			log.Fatalf("Response failed with status code: %d and\nbody: %s\n", res.StatusCode, body)
@@ -130,7 +134,7 @@ func explore(cfg *config, city string) error {
 		if err != nil {
 			log.Fatal(err)
 		}
-		cfg.cache.Add(cfg.next, body)
+		cfg.cache.Add(cfg.next+city, body)
 		fmt.Println("storing into cache")
 	}
 
@@ -141,6 +145,51 @@ func explore(cfg *config, city string) error {
 	}
 	for _, p := range pokemons.PokemonEncounters {
 		fmt.Printf("%v\n", p.Pokemon.Name)
+	}
+	if len(pokemons.PokemonEncounters) == 0 {
+		fmt.Println("No encounters available")
+	}
+	return nil
+}
+func catch(cfg *config, pokemonName string) error {
+	fmt.Printf("Throwing a Pokeball at %s...\n", pokemonName)
+	url := "https://pokeapi.co/api/v2/pokemon/" + pokemonName
+
+	var body []byte // or whatever type res should be
+
+	value, ok := cfg.cache.Get(url)
+	if ok {
+		body = value
+		fmt.Println("getting value from cache")
+	} else {
+		res, err := http.Get(url)
+		if err != nil {
+			log.Fatal(err)
+		}
+		body, err = io.ReadAll(res.Body)
+		res.Body.Close()
+		if res.StatusCode > 299 {
+			log.Fatalf("Response failed with status code: %d and\nbody: %s\n", res.StatusCode, body)
+		}
+		if err != nil {
+			log.Fatal(err)
+		}
+		cfg.cache.Add(url, body)
+		fmt.Println("storing into cache")
+	}
+	var pokemon pokemonJson
+	err := json.Unmarshal(body, &pokemon)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	odds := pokemon.BaseExperience
+	roll := rand.Intn(odds)
+	if roll > odds/3 {
+		cfg.pokedex[pokemon.Name] = pokemon
+		fmt.Printf("you have captured %s\n", pokemon.Name)
+	} else {
+		fmt.Printf("%s has evaded you... you suck...\n", pokemon.Name)
 	}
 	return nil
 }

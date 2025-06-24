@@ -24,7 +24,7 @@ func startRepl() {
 		next:     "https://pokeapi.co/api/v2/location-area/",
 		previous: "",
 		cache:    internalCache,
-		explore:  "",
+		pokedex:  map[string]pokemonJson{},
 	}
 	cfgPtr := &cfg
 
@@ -36,7 +36,10 @@ func startRepl() {
 			continue
 		}
 		commandName := words[0]
-		area := words[1]
+		area := ""
+		if len(words) > 1 {
+			area = words[1]
+		}
 		command, exists := getCommands()[commandName]
 		if exists {
 			err := command.callback(cfgPtr, area)
@@ -84,6 +87,11 @@ func getCommands() map[string]cliCommand {
 			name:        "explore",
 			description: "Displays all pokemons of the region",
 			callback:    explore,
+		},
+		"catch": {
+			name:        "explore",
+			description: "Displays all pokemons of the region",
+			callback:    catch,
 		},
 	}
 }
